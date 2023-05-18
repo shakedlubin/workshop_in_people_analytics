@@ -1,4 +1,9 @@
+import os
+from dotenv import load_dotenv
+
 from load_page import *
+
+load_dotenv()
 
 def filter_links(href):
     prefix = "https://www.linkedin.com/in/"
@@ -6,7 +11,8 @@ def filter_links(href):
 
 def get_connections_urls(driver):
     connections_urls = []
-    for page_num in range(1, 62):
+    num_of_pages = int(os.getenv('linkedin_connection_page_count'))
+    for page_num in range(1, num_of_pages+1):
         connections_url = f"https://www.linkedin.com/search/results/people/?network=%5B%22F%22%5D&origin=MEMBER_PROFILE_CANNED_SEARCH&page={page_num}&sid=GAs"
         soup = load_page(driver, connections_url)
         connection_list = soup.find('main').find('ul').find_all('li')
