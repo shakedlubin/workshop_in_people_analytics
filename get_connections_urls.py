@@ -17,7 +17,10 @@ def get_connections_urls(driver):
         soup = load_page(driver, connections_url)
         connection_list = soup.find('main').find('ul').find_all('li')
         for connection in connection_list:
-            href = print(connection.find('a', href=filter_links))
-            connections_urls.append(href)
+            try:
+                href = connection.find('a', href=filter_links).get('href')
+                connections_urls.append(href)
+            except:
+                continue
 
     return connections_urls
