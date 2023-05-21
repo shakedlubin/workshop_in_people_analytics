@@ -14,7 +14,7 @@ load_dotenv()
 read_urls_file = True
 urls_output_file = "msc_search.txt"
 urls_input_file = "test_msc.txt"
-search_keyword = "ms.c"
+search_keyword = "ms.c"  # set to None to scan friends
 csv_output_file = "msc_data.csv"
 
 # Opening the login page and letting it load
@@ -26,7 +26,7 @@ time.sleep(5)
 username = driver.find_element(By.ID, "username")
 username.send_keys(os.getenv('linkedin_username'))
 pword = driver.find_element(By.ID, "password")
-pword.send_keys(os.getenv('linkedin_password'))	
+pword.send_keys(os.getenv('linkedin_password'))
 driver.find_element(By.XPATH, "//button[@type='submit']").click()
 
 # Get list of Linkedin profiles urls
