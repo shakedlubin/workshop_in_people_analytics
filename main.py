@@ -11,7 +11,11 @@ from get_connections_urls import *
 from load_page import *
 
 load_dotenv()
-read_txt_file = True
+read_urls_file = True
+urls_output_file = "msc_search.txt"
+urls_input_file = "test_msc.txt"
+search_keyword = "ms.c"
+csv_output_file = "msc_data.csv"
 
 # Opening the login page and letting it load
 driver = webdriver.Chrome(os.getenv('chromedriver_location'))
@@ -25,16 +29,16 @@ pword = driver.find_element(By.ID, "password")
 pword.send_keys(os.getenv('linkedin_password'))	
 driver.find_element(By.XPATH, "//button[@type='submit']").click()
 
-# Get my connections list
-if not read_txt_file:
-    connections_urls = get_connections_urls(driver)
+# Get list of Linkedin profiles urls
+if not read_urls_file:
+    connections_urls = get_connections_urls(driver, search_keyword)
     print(f'Connections collected {len(connections_urls)}')
-    with open('shakeds_connections.txt', 'w') as file:
+    with open(urls_output_file, 'w') as file:
         for item in connections_urls:
             file.write(str(item) + '\n')
 else:
     connections_urls = []
-    with open('test.txt', 'r') as file:
+    with open(urls_input_file, 'r') as file:
         for line in file:
             connections_urls.append(line.strip())
     print(f'Connections in file {len(connections_urls)}')
@@ -51,4 +55,4 @@ for connection in connections_urls:
 
 # Create and save the data
 df = pd.DataFrame(rows)
-df.to_csv('linkedin_data.csv', index=False)
+df.to_csv(csv_output_file, index=False)

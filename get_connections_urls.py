@@ -9,11 +9,14 @@ def filter_links(href):
     prefix = "https://www.linkedin.com/in/"
     return href and href.startswith(prefix)
 
-def get_connections_urls(driver):
+def get_connections_urls(driver, keywords):
     connections_urls = []
     num_of_pages = int(os.getenv('linkedin_connection_page_count'))
     for page_num in range(1, num_of_pages+1):
-        connections_url = f"https://www.linkedin.com/search/results/people/?network=%5B%22F%22%5D&origin=MEMBER_PROFILE_CANNED_SEARCH&page={page_num}&sid=GAs"
+        if keywords is not None:
+            connections_url = f"https://www.linkedin.com/search/results/people/?keywords={keywords}&origin=CLUSTER_EXPANSION&page={page_num}&sid=XlV"
+        else:
+            connections_url = f"https://www.linkedin.com/search/results/people/?network=%5B%22F%22%5D&origin=MEMBER_PROFILE_CANNED_SEARCH&page={page_num}&sid=GAs"
         soup = load_page(driver, connections_url)
         connection_list = soup.find('main').find('ul').find_all('li')
         for connection in connection_list:
