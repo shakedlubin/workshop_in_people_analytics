@@ -18,7 +18,15 @@ def get_connections_urls(driver, keywords):
         else:
             connections_url = f"https://www.linkedin.com/search/results/people/?network=%5B%22F%22%5D&origin=MEMBER_PROFILE_CANNED_SEARCH&page={page_num}&sid=GAs"
         soup = load_page(driver, connections_url)
-        connection_list = soup.find('main').find('ul').find_all('li')
+        
+        try:
+            lists = soup.find('main').find_all('ul')
+            connection_list = []
+            for ul in lists:
+                connection_list += ul.find_all('li')
+        except:
+            continue
+        
         for connection in connection_list:
             try:
                 href = connection.find('a', href=filter_links).get('href')

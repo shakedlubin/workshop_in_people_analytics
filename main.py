@@ -11,7 +11,7 @@ from get_connections_urls import *
 from load_page import *
 
 load_dotenv()
-read_urls_file = True
+read_urls_file = False
 urls_output_file = "msc_search.txt"
 urls_input_file = "test_msc.txt"
 search_keyword = "ms.c"  # set to None to scan friends
