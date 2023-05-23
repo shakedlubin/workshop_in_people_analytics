@@ -7,10 +7,11 @@ load_dotenv()
 
 def filter_links(href):
     prefix = "https://www.linkedin.com/in/"
-    return href and href.startswith(prefix)
+    bad_prefix = "https://www.linkedin.com/in/ACo"
+    return href and href.startswith(prefix) and not href.startswith(bad_prefix)
 
 def get_connections_urls(driver, keywords):
-    connections_urls = []
+    connections_urls = set()
     num_of_pages = int(os.getenv('linkedin_connection_page_count'))
     for page_num in range(1, num_of_pages+1):
         if keywords is not None:
@@ -29,9 +30,12 @@ def get_connections_urls(driver, keywords):
         
         for connection in connection_list:
             try:
-                href = connection.find('a', href=filter_links).get('href')
-                connections_urls.append(href)
+                a_tags = connection.find_all('a', href=filter_links)
+                for a_tag in a_tags:
+                    connections_urls.add(a_tag.get('href'))
             except:
                 continue
+
+        print(f'Collected {len(connections_urls)} from {page_num} pages')
 
     return connections_urls

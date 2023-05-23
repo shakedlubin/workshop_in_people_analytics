@@ -42,7 +42,7 @@ else:
         for line in file:
             connections_urls.append(line.strip())
     print(f'Connections in file {len(connections_urls)}')
-
+exit()
 # Iterate over all their pages and extract the relevant info
 rows = []
 for connection in connections_urls:
