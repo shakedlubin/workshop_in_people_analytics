@@ -28,4 +28,4 @@ clean_column(df['Experience'], r"(\d+ (?:yr|yrs|mos))")
 clean_column(df['skills'], r"\b\d{4}\b(?:\s*-\s*(?:\d{4}|[A-Za-z]{3} \d{4}))?")
 clean_column(df['Education'], r"\b\d{4}\b(?:\s*-\s*(?:\d{4}|[A-Za-z]{3} \d{4}))?")
 
-df.to_csv(input_csv, index=False)
+df.to_csv(input_csv[:-4]+'_cleaned.csv', index=False)

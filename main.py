@@ -13,7 +13,7 @@ from load_page import *
 load_dotenv()
 read_urls_file = True
 urls_output_file = "msc_search.txt"
-urls_input_file = "msc_search.txt"
+urls_input_file = "test.txt"
 search_keyword = "ms.c"  # set to None to scan friends
 csv_output_file = "msc_data.csv"
 
@@ -62,4 +62,8 @@ for connection in connections_urls:
         df.to_csv(csv_output_file, mode='a', header=header_flag, index=False)
         if header_flag:
             header_flag = False
+
+if count != 100:
+    df = pd.DataFrame(rows)
+    df.to_csv(csv_output_file, mode='a', header=header_flag, index=False)  
     
