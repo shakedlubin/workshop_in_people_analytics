@@ -11,9 +11,9 @@ from get_connections_urls import *
 from load_page import *
 
 load_dotenv()
-read_urls_file = False
+read_urls_file = True
 urls_output_file = "msc_search.txt"
-urls_input_file = "test_msc.txt"
+urls_input_file = "msc_search.txt"
 search_keyword = "ms.c"  # set to None to scan friends
 csv_output_file = "msc_data.csv"
 
@@ -42,9 +42,11 @@ else:
         for line in file:
             connections_urls.append(line.strip())
     print(f'Connections in file {len(connections_urls)}')
-exit()
+
 # Iterate over all their pages and extract the relevant info
 rows = []
+count = 0
+header_flag = True
 for connection in connections_urls:
     soup = load_page(driver, connection)
     try:
@@ -53,6 +55,11 @@ for connection in connections_urls:
     except:
         continue
 
-# Create and save the data
-df = pd.DataFrame(rows)
-df.to_csv(csv_output_file, index=False)
+    count += 1
+    if count == 100:
+        count = 0
+        df = pd.DataFrame(rows)
+        df.to_csv(csv_output_file, mode='a', header=header_flag, index=False)
+        if header_flag:
+            header_flag = False
+    
