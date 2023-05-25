@@ -13,9 +13,9 @@ from load_page import *
 load_dotenv()
 read_urls_file = True
 urls_output_file = "msc_search.txt"
-urls_input_file = "test.txt"
+urls_input_file = "shakeds_connections.txt"
 search_keyword = "ms.c"  # set to None to scan friends
-csv_output_file = "msc_data.csv"
+csv_output_file = "shakeds_connections_data.csv"
 
 # Opening the login page and letting it load
 driver = webdriver.Chrome(os.getenv('chromedriver_location'))
@@ -56,14 +56,14 @@ for connection in connections_urls:
         continue
 
     count += 1
-    if count == 100:
+    if count == 10:
         count = 0
         df = pd.DataFrame(rows)
         df.to_csv(csv_output_file, mode='a', header=header_flag, index=False)
         if header_flag:
             header_flag = False
 
-if count != 100:
+if count != 10:
     df = pd.DataFrame(rows)
     df.to_csv(csv_output_file, mode='a', header=header_flag, index=False)  
     
