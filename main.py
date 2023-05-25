@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import pandas as pd
 
 from extract_relevant_fields import *
-from get_connections_urls import *
+from get_users_urls import *
 from load_page import *
 
 load_dotenv()
