@@ -12,7 +12,7 @@ from sklearn.svm import SVC
 
 
 INPUT_MSC_FILE = 'msc_data.csv'
-INPUT_NOT_MSC_FILE = 'msc_data.csv'
+INPUT_NOT_MSC_FILE = 'shaked_connections_data.csv'
 
 relevant_words = ['teacher', 'teaching', 'teach']
 similar_words = set()
