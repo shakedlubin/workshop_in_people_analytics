@@ -9,7 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-
+from sklearn.metrics import precision_score, recall_score, f1_score
 
 INPUT_MSC_FILE = 'msc_data.csv'
 INPUT_NOT_MSC_FILE = 'shaked_connections_data.csv'
@@ -93,24 +93,34 @@ def add_nlp_features(df, col_name):
 
     return df_features
 
-def remove_unwanted_df(df):
+def remove_unwanted_columns(df):
     columns_to_del = ['Education', 'Education_clean', 'Experience', 'Experience_clean', 
-                      'skills', 'skills_clean', 'Name', 'Workplace']
+                      'skills', 'skills_clean', 'Name', 'Workplace', 'text_clean']
     for col in columns_to_del:
-        del df[col]
+        if col in df.columns:
+            del df[col]
+
+    return df
+
+def clean_train_data(df):
+    columns_to_remove = ['ms', 'master', 'msc', 'masters', 'mscs']
+    for col in columns_to_remove:
+        if col in df.columns:
+            df[col] = 0
 
     return df
 
 def run_model(df):
     # Split the data into train and test sets
     X_train, X_test, y_train, y_test = train_test_split(df.drop('is_msc', axis=1), df['is_msc'], test_size=0.2, random_state=42)
+    X_train = clean_train_data(X_train)
 
     # Create and train your machine learning models
     models = [
         ('Logistic Regression', LogisticRegression(C=100.0, random_state=1, solver='lbfgs', multi_class='ovr', max_iter=5000)),
         ('Decision Tree', DecisionTreeClassifier()),
         ('Random Forest', RandomForestClassifier()),
-        ('SVM', SVC())
+        ('SVC', SVC())
     ]
 
     for model_name, model in models:
@@ -118,8 +128,13 @@ def run_model(df):
         model.fit(X_train, y_train)
 
         # Evaluate the model
+        y_pred = model.predict(X_test)
         accuracy = model.score(X_test, y_test)
-        print(f"{model_name} Accuracy: {accuracy:.2f}")
+        precision = precision_score(y_test, y_pred, average='weighted')
+        recall = recall_score(y_test, y_pred, average='weighted')
+        f1 = f1_score(y_test, y_pred, average='weighted')
+
+        print(f"{model_name} Metrics: Precision={precision:.2f} Recall={recall:.2f} F1-Score={f1:.2f} Accuracy={accuracy:.2f}") 
 
 def main():
     # Read input files
@@ -139,11 +154,12 @@ def main():
     # Add features
     full_df = add_features(full_df)
 
-    # Add Bag-Of-Words features
-    full_df = add_nlp_features(full_df, 'Education_clean')
+    # Add NLP features
+    full_df['text_clean'] = full_df['Education_clean']+' '+full_df['Experience_clean']+' '+full_df['skills_clean']
+    full_df = add_nlp_features(full_df, 'text_clean')
 
     # Remove unwanted columns
-    full_df = remove_unwanted_df(full_df)
+    full_df = remove_unwanted_columns(full_df)
     
     # Run model
     full_df.to_csv("input_for_model.csv", index=False)
