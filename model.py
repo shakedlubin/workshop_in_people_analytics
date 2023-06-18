@@ -9,7 +9,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-
+from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.feature_selection import SelectKBest, chi2
+from nltk.tokenize import word_tokenize
+import unicodedata
 
 INPUT_MSC_FILE = 'msc_data.csv'
 INPUT_NOT_MSC_FILE = 'shaked_connections_data.csv'
@@ -22,6 +25,14 @@ for word in relevant_words:
         for lemma in synset.lemmas():
             similar_words.add(lemma.name())
 similar_words = list(similar_words)
+
+def is_pua(c):
+    return unicodedata.category(c) == 'Co'
+
+def custom_tokenizer(text):
+    tokens = word_tokenize(text)
+    # Apply additional preprocessing or filtering if needed
+    return tokens
 
 def remove_punctuation(text):
     return re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
@@ -86,20 +97,69 @@ def add_features(df):
     return df
 
 def add_nlp_features(df, col_name):
-    vectorizer = CountVectorizer()
+    vectorizer = CountVectorizer(stop_words='english', tokenizer=custom_tokenizer) #Remove stop/conjuction words
     X = vectorizer.fit_transform(df[col_name])
     df_bow_sklearn = pd.DataFrame(X.toarray(),columns=vectorizer.get_feature_names_out())
     df_features = pd.concat([df.reset_index(drop=True), df_bow_sklearn.reset_index(drop=True)], axis=1)
 
     return df_features
 
-def remove_unwanted_df(df):
+def remove_unwanted_columns(df):
+    # Ms.c columns
     columns_to_del = ['Education', 'Education_clean', 'Experience', 'Experience_clean', 
-                      'skills', 'skills_clean', 'Name', 'Workplace']
+                      'skills', 'skills_clean', 'Name', 'Workplace', 'text_clean',
+                      'ms', 'master', 'msc', 'masters', 'mscs', 'mba', 'phd',
+                      'research', 'researched','researcher', 'researchers', 'researches',
+                      'researchgate', 'researching', 'researchs',
+                      'academic', 'academically', 'academy', 
+                      'bachelor', 'degree', 'degrees']
     for col in columns_to_del:
-        del df[col]
+        if col in df.columns:
+            del df[col]
 
+    # Number columns
+    number_columns = [column for column in df.columns if str(column).isdigit()]
+    df = df.drop(number_columns, axis=1)
+    
+    # 1-3 character words
+    short_names_columns = [column for column in df.columns if len(str(column)) < 4]
+    df = df.drop(short_names_columns, axis=1)
+
+    # Country names
+    country_names_columns = ['israel', 'india', 'iran', 'canada', 'egypt']
+    df = df.drop(country_names_columns, axis=1)
+
+    # Invalid words
+    invalid_columns = ['uf0a7', 'uf0b7']
+    df = df.drop(invalid_columns, axis=1)
+
+    # Save the reminder columns to CSV
+    column_names = df.columns.tolist()
+    columns_df = pd.DataFrame({'Column Names': column_names})
+    columns_df.to_csv('column_names.csv', index=False)
     return df
+
+def select_k_best_features(df, k=100):
+    # Separate the target variable from the DataFrame
+    X = df.drop('is_msc', axis=1)
+    y = df['is_msc']
+
+    # Perform feature selection with chi-squared test
+    selector = SelectKBest(chi2, k=k)
+    X_selected = selector.fit_transform(X, y)
+
+    # Get the selected feature names
+    selected_feature_names = X.columns[selector.get_support()].tolist()
+
+    # Create the transformed DataFrame with selected features
+    df_selected = pd.DataFrame(X_selected, columns=selected_feature_names)
+    df_selected['is_msc'] = y
+
+    # Save selected features to CSV
+    columns_df = pd.DataFrame({'Features': selected_feature_names})
+    columns_df.to_csv('selected_features.csv', index=False)
+
+    return df_selected
 
 def run_model(df):
     # Split the data into train and test sets
@@ -110,17 +170,34 @@ def run_model(df):
         ('Logistic Regression', LogisticRegression(C=100.0, random_state=1, solver='lbfgs', multi_class='ovr', max_iter=5000)),
         ('Decision Tree', DecisionTreeClassifier()),
         ('Random Forest', RandomForestClassifier()),
-        ('SVM', SVC())
+        ('SVC', SVC())
     ]
 
+    results = []
     for model_name, model in models:
         # Train the model
         model.fit(X_train, y_train)
 
         # Evaluate the model
+        y_pred = model.predict(X_test)
         accuracy = model.score(X_test, y_test)
-        print(f"{model_name} Accuracy: {accuracy:.2f}")
+        precision = precision_score(y_test, y_pred, average='weighted')
+        recall = recall_score(y_test, y_pred, average='weighted')
+        f1 = f1_score(y_test, y_pred, average='weighted')
 
+        print(f"{model_name} Metrics: Precision={precision:.2f} Recall={recall:.2f} F1-Score={f1:.2f} Accuracy={accuracy:.2f}") 
+        row = {
+            "Model Name": model_name,
+            "Precision": precision,
+            "Recall": recall,
+            "F1-Score": f1,
+            "Accuracy": accuracy
+            }
+        results.append(row)
+
+    results_df = pd.DataFrame(results)
+    results_df.to_csv('results.csv', index=False)
+    
 def main():
     # Read input files
     msc_df = pd.read_csv(INPUT_MSC_FILE, encoding='utf-8')
@@ -139,12 +216,16 @@ def main():
     # Add features
     full_df = add_features(full_df)
 
-    # Add Bag-Of-Words features
-    full_df = add_nlp_features(full_df, 'Education_clean')
+    # Add NLP features
+    full_df['text_clean'] = full_df['Education_clean']+' '+full_df['Experience_clean']+' '+full_df['skills_clean']
+    full_df = add_nlp_features(full_df, 'text_clean')
 
     # Remove unwanted columns
-    full_df = remove_unwanted_df(full_df)
+    full_df = remove_unwanted_columns(full_df)
     
+    # Keep K best features
+    full_df = select_k_best_features(full_df, 30) 
+
     # Run model
     full_df.to_csv("input_for_model.csv", index=False)
     run_model(full_df)
